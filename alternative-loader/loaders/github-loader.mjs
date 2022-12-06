@@ -1,4 +1,4 @@
-import { promiseRequest } from "./utils.mjs";
+import { promiseRequest } from "../utils.mjs";
 
 const Prefix = "github:";
 

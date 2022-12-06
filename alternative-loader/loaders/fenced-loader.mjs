@@ -1,4 +1,4 @@
-import { toModuleSource } from "../fenced-code-node-loader-demo/fenced.mjs";
+import { toModuleSource } from "../../../fenced-code-node-loader-demo/fenced.mjs";
 
 const Loader = {
     name: "Fenced Markdown",

@@ -1,18 +1,20 @@
+import { readFileSync, readdirSync } from "fs";
+import { join } from "path";
+
 const KnownTypes = new Set(["module", "commonjs", "json", "wasm", "builtin"]);
 const RegisteredLoaders = [];
 
+for (const file of readdirSync("./alternative-loader/loaders/")) {
+    await registerLoader("./" + join("loaders", file));
+}
+
 export async function registerLoader(loaderPath) {
+    console.log("registering...", loaderPath);
     let { default: loader } = await import(loaderPath);
     RegisteredLoaders.push(normalizedLoader(loader));
 }
 
-export async function load(path) {
-    const [finalURL, { headers, body }] = await resolvePath(path);
-
-    if (!finalURL) {
-        throw new Error(`No loader found for ${path}.`);
-    }
-
+export async function _load(finalURL, {headers, body }) {
     var resolvedContent = { format: null, source: null };
     const convertedTypes = [];
 
@@ -53,7 +55,7 @@ function isBareSpecifier(specifier) {
     return specifier[0] && specifier[0] !== '/' && specifier[0] !== '.';
 }
 
-async function resolvePath(path) {
+export async function _resolvePath(path) {
     if (isBareSpecifier(path)) {
         for (const loader of RegisteredLoaders) {
             if (loader.request) {
