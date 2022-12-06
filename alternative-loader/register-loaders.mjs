@@ -9,7 +9,6 @@ for (const file of readdirSync("./alternative-loader/loaders/")) {
 }
 
 export async function registerLoader(loaderPath) {
-    console.log("registering...", loaderPath);
     let { default: loader } = await import(loaderPath);
     RegisteredLoaders.push(normalizedLoader(loader));
 }
