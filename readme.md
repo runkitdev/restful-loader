@@ -22,7 +22,7 @@ Once node is running you can use loaders by importing modules:
 
 ```js
 await import("github:tolmasky/fenced/main/fenced/test.mjs.md")
-``
+```
 
 The above is an example of chained loaders. The first loader knows how to resolve GitHub content with
 an import specifier of `github:`, but it's ambivalent to content type. So when the downloaded content
