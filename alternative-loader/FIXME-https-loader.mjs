@@ -2,7 +2,7 @@ import { promiseRequest } from "./utils.mjs";
 
 export const loader = ({
     // Returns: Promise<{ status, headers, body } | false>
-    async request(url) {
+    async resolve(url) {
 
         if (!url.startsWith("https://")) return false;
 

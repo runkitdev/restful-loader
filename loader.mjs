@@ -1,5 +1,5 @@
 // Manually register new loaders with `registerLoader`.
-import { registerLoader, _load, _resolvePath } from "./alternative-loader/register-loaders.mjs";
+import { registerLoader, _transform, _resolvePath } from "./alternative-loader/register-loaders.mjs";
 
 const _resolved = new Map();
 
@@ -10,7 +10,7 @@ export async function load(URLString, context, nextLoad)
     }
 
     const { headers, body } = _resolved.get(URLString);
-    const { format, source } = await _load(URLString, { headers, body });
+    const { format, source } = await transform_(URLString, { headers, body });
 
     return { format, source, shortCircuit: true };
 }

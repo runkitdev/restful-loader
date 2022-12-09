@@ -8,7 +8,7 @@ const Loader = {
         }
     },
 
-    async load(headers, body) {
+    async transform(headers, body) {
         const source = await toModuleSource(body, "");
 
         return {

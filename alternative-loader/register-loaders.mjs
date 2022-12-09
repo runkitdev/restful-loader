@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from "fs";
+import { readdirSync } from "fs";
 import { join } from "path";
 
 const KnownTypes = new Set(["module", "commonjs", "json", "wasm", "builtin"]);
@@ -13,7 +13,7 @@ export async function registerLoader(loaderPath) {
     RegisteredLoaders.push(normalizedLoader(loader));
 }
 
-export async function _load(finalURL, {headers, body }) {
+export async function _transform(finalURL, {headers, body }) {
     var resolvedContent = { format: null, source: null };
     const convertedTypes = [];
 
@@ -57,8 +57,8 @@ function isBareSpecifier(specifier) {
 export async function _resolvePath(path) {
     if (isBareSpecifier(path)) {
         for (const loader of RegisteredLoaders) {
-            if (loader.request) {
-                const result = await loader.request(path);
+            if (loader.resolve) {
+                const result = await loader.resolve(path);
 
                 if (!result)
                     continue;
@@ -73,7 +73,7 @@ export async function _resolvePath(path) {
 
                 // FIXME: should we throw here or just try the next loader?
                 // if (statusError(result.statusCode))
-                return new Error("FIXME: errored trying to request URL.");
+                return new Error("FIXME: errored trying to resolve URL.");
             }
         }
 
@@ -115,7 +115,7 @@ async function resolveLoad(mimeType, headers, body) {
 
     for (const loader of RegisteredLoaders) {
         if (loader.accepts && loader.accepts.includes(mimeType)) {
-            const result = await loader.load(headers, body);
+            const result = await loader.transform(headers, body);
 
             // Validate the result.
             if (typeof result !== "object") {
@@ -136,6 +136,80 @@ async function resolveLoad(mimeType, headers, body) {
     }
 }
 
+function assertNonCyclicalTypes(mimeType, convertedTypes) {
+    convertedTypes.forEach((type, index) => {
+        if (mimeType === type) {
+            const cyclePath = convertedTypes.slice(0, index).join(" -> ") + type;
+            const message = `Cyclical mime-types found during transform.\n${cyclePath}`;
+
+            throw new Error(message);
+        }
+    });
+}
+
+function normalizedLoader(exports) {
+    const { name = "Unnamed", resolve, identify, extensionMimeMap, transform, accepts } = exports;
+
+    if (identify && typeof identify !== "function") {
+        throw new TypeError("Expected `identify` field to be a function.");
+    }
+
+    if (resolve && typeof resolve !== "function") {
+        throw new TypeError("Expected `resolve` field to be a function.");
+    }
+
+    const id = makeIdentify(identify, extensionMimeMap);
+
+    if (transform && !accepts) {
+        throw new Error("If you supply a `transform` function you must also provide an `accepts` field with a list of acceptable mime-types.");
+    } else if (accepts && !transform) {
+        throw new Error("If you supply a `accepts` function you must also provide an `transform` field with a function those accepts that mime-types.");
+    }
+
+    if (transform && typeof transform !== "function") {
+        throw new TypeError("Expected `transform` field to be a function.");
+    }
+
+    if (accepts && typeof accepts !== "string" && !Array.isArray(accepts)) {
+        throw new TypeError("Expected `accepts` field to be a mime-type string or an array of mime-type strings.");
+    }
+
+    // FIXME: validate types.
+
+    return {
+        name: name,
+        resolve: resolve,
+        transform: transform,
+        accepts: accepts,
+        identify: id,
+    }
+}
+
+import { extname } from "node:fs";
+
+function makeIdentify(idFn, map) {
+    if (!map) return idFn;
+
+    // FIXME Allow RegExps?
+    Object.keys(map).forEach(key => {
+        const value = map[key];
+        if (typeof value !== "string") {
+            throw new TypeError(`Invalid \`extensionMimeMap\` value for key \`${key}\`.`);
+        }
+    });
+
+    if (!idFn) return map;
+
+    // If both the function and the map are given, compose them:
+    return function identify(url, body, headers) {
+        let ext = extname(url);
+        if (Object.prototype.hasOwnProperty.call(map, ext)) {
+            return map[ext];
+        }
+
+        return idFn(url, body, headers);
+    };
+}
 
 // function escapeRegexpInput(str) {
 //     const specials = new Set("[ * + ? { . ( ) ^ $ | \\".split(" "));
@@ -152,51 +226,3 @@ async function resolveLoad(mimeType, headers, body) {
 
 //     return out;
 // }
-
-// function makeIdentifyFromExtMimeMap(ext, mimeType) {
-//     const regexp = new RegExp(escapeRegexpInput(ext));
-//     const test = input => {
-//         return regexp.test(input) && mimeType;
-//     };
-
-//     return test;
-// }
-
-// function getContentTypeFromURL(URL) {
-//     for (let i = mimeTypeMap.length - 1; i >= 0; i--) {
-//         const test = mimeTypeMap[i];
-//         return test(URL);
-//     }
-
-//     return undefined; // ??
-// }
-
-function assertNonCyclicalTypes(mimeType, convertedTypes) {
-
-}
-
-function assertType(input, expected, name) {
-    const type = typeof input;
-    if (type !== expected)
-        throw new TypeError(`Unexpected type fo parameter ${name}, expected ${expected} but received ${type}`);
-}
-
-function normalizedLoader(exports) {
-    const { name, request, identify, extensionMap, load, accepts } = exports;
-
-    const id = identify || undefined;// || makeIdentifyFromExtMimeMap(extensionMap.)
-
-    if (load && !accepts) {
-        throw new Error("If you supply a `load` function you must also provide an `accepts` field with a list of acceptable mime-types.");
-    }
-
-    // FIXME: validate types.
-
-    return {
-        name: name || "Unnamed",
-        request: request || undefined,
-        load: load || undefined,
-        accepts: accepts || undefined,
-        identify: id,
-    }
-}
