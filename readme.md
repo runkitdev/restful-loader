@@ -50,6 +50,8 @@ Because loaders may encounter errors when loading files it leverages HTTP status
 
 The `headers` field is a dictionary object that can be used to provide metadata to other loaders or to transform functions later. For the most part the most interesting field will be the `Content-Type` header, because not all specifiers include file extensions.
 
+The `headers` field may also contain a redirect status code with a `location` header, which the loader system will follow.
+
 Lastly the `body` field is the contents of the file.
 
 ###  `identify`

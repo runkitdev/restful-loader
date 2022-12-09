@@ -60,10 +60,11 @@ export async function _resolvePath(path) {
             if (loader.request) {
                 const result = await loader.request(path);
 
-                if (!result) continue;
+                if (!result)
+                    continue;
 
                 // Success!
-                if (result && statusOk(result.statusCode))
+                if (statusOk(result.statusCode))
                     return [path, result];
 
                 // Follow the redirect.
@@ -84,15 +85,16 @@ export async function _resolvePath(path) {
 }
 
 async function resolveMimeType(url, headers, body) {
+    // If there is already a content-type then the loader system already has all the
+    // information it needs.
     if (headers["content-type"]) {
         return headers["content-type"];
     }
 
-
     for (const loader of RegisteredLoaders) {
         if (!loader.identify) continue;
 
-        const result = loader.identify(url, body, headers);
+        const result = await loader.identify(url, body, headers);
         if (result) {
             return result;
         }
@@ -100,6 +102,17 @@ async function resolveMimeType(url, headers, body) {
 }
 
 async function resolveLoad(mimeType, headers, body) {
+    // When the mimetype is javascript, we're done. Just return the body and the format.
+    // FIXME: The official mimetype for cjs is the same as an esm module, which is really
+    // unfortunate, so we need to come up with a clean way to specify "legacy" cjs file
+    // (which makes up the VAST MAJORITY of the js ecosystem).
+    if (mimeType === "text/javascript" || mimeType === "application/javascript") {
+        return {
+            source: body,
+            format: "module"
+        }
+    }
+
     for (const loader of RegisteredLoaders) {
         if (loader.accepts && loader.accepts.includes(mimeType)) {
             const result = await loader.load(headers, body);
