@@ -187,25 +187,46 @@ function normalizedLoader(exports) {
 
 import { extname } from "node:fs";
 
+// There are two ways for identify to work for loaders, the low level way
+// is to just supply a function that returns a mimetype. But loaders can
+// also return a map from extensions to mime-types.
+// The function will convert that map into a function for the
+// loader system to use.
+// If both a map and a function are provided then a function is created that
+// first looks up the entry in the map, and falls back to the function
+// if no entry is found.
 function makeIdentify(idFn, map) {
-    if (!map) return idFn;
+    if (!map)
+    {
+        if (!isFn)
+            return undefined;
+
+        return idFn;
+    }
 
     // FIXME Allow RegExps?
     Object.keys(map).forEach(key => {
         const value = map[key];
         if (typeof value !== "string") {
+            // FIXME: Validate known mime types?
             throw new TypeError(`Invalid \`extensionMimeMap\` value for key \`${key}\`.`);
         }
     });
 
-    if (!idFn) return map;
-
-    // If both the function and the map are given, compose them:
-    return function identify(url, body, headers) {
-        let ext = extname(url);
+    function identifyFromMimeMap(url) {
+        const ext = extname(url);
         if (Object.prototype.hasOwnProperty.call(map, ext)) {
             return map[ext];
         }
+    }
+
+    if (!idFn)
+        return identifyFromMimeMap;
+
+    // If both the function and the map are given, compose them:
+    return function identify(url, body, headers) {
+        const result = identifyFromMimeMap(url);
+        if (result !== undefined) return result;
 
         return idFn(url, body, headers);
     };
