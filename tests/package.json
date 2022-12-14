@@ -1,0 +1,14 @@
+{
+  "name": "restful-loader-tests",
+  "version": "1.0.0",
+  "description": "A basic test runner for the restful loader API.",
+  "main": "run-tests.mjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@await/spawn": "^9.0.0"
+  }
+}
