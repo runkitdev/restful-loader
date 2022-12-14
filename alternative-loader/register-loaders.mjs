@@ -185,7 +185,7 @@ function normalizedLoader(exports) {
     }
 }
 
-import { extname } from "node:fs";
+import { extname } from "node:path";
 
 // There are two ways for identify to work for loaders, the low level way
 // is to just supply a function that returns a mimetype. But loaders can
