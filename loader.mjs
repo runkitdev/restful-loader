@@ -23,7 +23,7 @@ export async function resolve(specifier, context, nextResolve) {
     const [finalURL, result] = await _resolvePath(specifier);
 
     if (!finalURL) {
-        throw new Error(`No loader found for ${path}.`);
+        throw new Error(`No loader found for ${specifier}.`);
     }
 
     // You can't share custom context between resolve and load.

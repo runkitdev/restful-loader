@@ -16,3 +16,5 @@ export function identify(header, body) {
 
     return undefined;
 }
+
+export default { identify, name };

@@ -198,7 +198,7 @@ import { extname } from "node:path";
 function makeIdentify(idFn, map) {
     if (!map)
     {
-        if (!isFn)
+        if (!idFn)
             return undefined;
 
         return idFn;
