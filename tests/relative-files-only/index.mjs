@@ -1,3 +1,5 @@
 import { foo } from "./dependency.mjs";
 
-export const foo = foo();
+export const foo2 = foo();
+
+console.log(foo2);

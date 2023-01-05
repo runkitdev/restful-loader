@@ -9,7 +9,7 @@ for (const file of readdirSync("./alternative-loader/loaders/")) {
 }
 
 export async function registerLoader(loaderPath) {
-    let { default: loader } = await import(loaderPath);
+    const { default: loader } = await import(loaderPath);
     RegisteredLoaders.push(normalizedLoader(loader));
 }
 
@@ -63,6 +63,8 @@ export async function _resolvePath(path) {
                 if (!result)
                     continue;
 
+                validatePathResolveResult(result);
+
                 // Success!
                 if (statusOk(result.statusCode))
                     return [path, result];
@@ -73,14 +75,16 @@ export async function _resolvePath(path) {
 
                 // FIXME: should we throw here or just try the next loader?
                 // if (statusError(result.statusCode))
-                return new Error("FIXME: errored trying to resolve URL.");
+                throw new Error("FIXME: errored trying to resolve URL.");
             }
         }
 
         return [null, {}];
     } else {
-        // fall through to the default loader!
-        throw new Error("Default loader not implemented yet.");
+        console.log("===========================");
+        console.log("Non bare specifier path: ", path);
+        console.log("===========================");
+        throw new Error("NON BARE SPECIFIER PATH NOT IMPLEMENTED YET!");
     }
 }
 
@@ -129,7 +133,6 @@ async function resolveLoad(mimeType, headers, body) {
             if (typeof result.format !== "string") {
                 throw new TypeError(`Returned value from "${loader.name}" Loader did not contain a valid \`format\` field.`);
             }
-
 
             return result;
         }
@@ -230,6 +233,28 @@ function makeIdentify(idFn, map) {
 
         return idFn(url, body, headers);
     };
+}
+
+function validatePathResolveResult(result) {
+    if (typeof result !== "object")
+        throw new TypeError("Result from resolve for loaders must be `false` or an object.");
+
+    if (!Reflect.has(result, "statusCode"))
+        throw new TypeError("Result from resolve for loaders must be `false` or an object with contains a `statusCode` field.");
+
+    if (typeof result.statusCode !== "number")
+        throw new TypeError("Loader result `statusCode` field must be a number.");
+
+    // If the status code is not Ok then move along.
+    if (!statusOk(result.statusCode))
+        return;
+
+    if (!Reflect.has(result, "body"))
+        throw new TypeError("Result from loader must have a `body` field if the `statusCode` is in the 200 range.");
+
+    // FIXME: Should this throw or just add an empty headers field?
+    if (!Reflect.has(result, "headers"))
+        result.headers = {};
 }
 
 // function escapeRegexpInput(str) {

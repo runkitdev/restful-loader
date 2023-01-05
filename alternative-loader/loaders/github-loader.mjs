@@ -4,7 +4,7 @@ const Prefix = "github:";
 
 const Loader = ({
     name: "GitHub",
-    // Returns: Promise<{ status, headers, body } | false>
+    // Returns: Promise<{ statusCode, headers, body } | false>
     async resolve(path) {
 
         if (!path.startsWith(Prefix)) return false;
