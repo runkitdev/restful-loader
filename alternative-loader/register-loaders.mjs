@@ -87,7 +87,7 @@ export async function _resolvePath(path, context) {
 
                 // FIXME: should we throw here or just try the next loader?
                 // if (statusError(result.statusCode))
-                throw new Error("FIXME: errored trying to resolve URL.");
+                throw new Error("FIXME: errored trying to resolve path. " + path);
             }
         }
 

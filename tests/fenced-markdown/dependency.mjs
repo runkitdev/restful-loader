@@ -1,3 +1,2 @@
-export function foo () {
-    return "Hello World!";
-};
+import { foo } from "./dep2.mjs";
+export const foo2 = foo;

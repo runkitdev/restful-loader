@@ -1,0 +1,1 @@
+import * as test from "github:me1000/some_testing_stuff/main/basic/index.mjs";

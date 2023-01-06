@@ -10,8 +10,8 @@ console.log("See! I'm a real javascript file!");
 ## Dependencies
 This file can also bring in dependencies!
 ```javascript
-import { foo } from "./dependency.mjs";
-console.log("Imported foo is: ", foo());
+import { foo2 } from "./dependency.mjs";
+console.log("Imported foo is: ", foo2());
 ```
 
 ### Fenced Markdown Dependencies

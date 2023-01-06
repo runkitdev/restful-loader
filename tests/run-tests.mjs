@@ -1,13 +1,31 @@
 import { spawn } from "@await/spawn";
 
-await spawn("node", [
+console.log(await spawn("node", [
     "--experimental-loader", "./loader.mjs",
     "./tests/relative-files-only/index.mjs"
     ],
-    { cwd: "../" });
+    { cwd: "../" }));
 
-await spawn("node", [
+console.log(await spawn("node", [
     "--experimental-loader", "./loader.mjs",
     "./tests/fenced-markdown/index.mjs.md"
     ],
-    { cwd: "../" });
+    { cwd: "../" }));
+
+console.log(await spawn("node", [
+    "--experimental-loader", "./loader.mjs",
+    "./tests/shell-loader/shell-script"
+    ],
+    { cwd: "../" }));
+
+console.log(await spawn("node", [
+    "--experimental-loader", "./loader.mjs",
+    "./tests/github-basic/index.mjs"
+    ],
+    { cwd: "../" }));
+
+console.log(await spawn("node", [
+    "--experimental-loader", "./loader.mjs",
+    "./tests/github-fenced/index.mjs"
+    ],
+    { cwd: "../" }));

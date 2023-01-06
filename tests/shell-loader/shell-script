@@ -1,0 +1,2 @@
+#!/usr/bin/node
+console.log("This could be run as a shell script. But it could also be imported even without the .mjs extension.");

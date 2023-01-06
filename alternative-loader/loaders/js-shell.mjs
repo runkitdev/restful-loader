@@ -5,7 +5,7 @@ const commonNodeLocations = new Set([
    // other common locations here...
 ]);
 
-export function identify(url, header, body) {
+export function identify(url, body, header) {
     if (body.length < 4) return undefined;
     if (body.charAt(0) !== '#' || body.charAt(1) !== "!") return undefined;
 
