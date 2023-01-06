@@ -20,7 +20,7 @@ export async function resolve(specifier, context, nextResolve) {
         return nextResolve(specifier);
     }
 
-    const [finalURL, result] = await _resolvePath(specifier);
+    const [finalURL, result] = await _resolvePath(specifier, context);
 
     if (!finalURL) {
         throw new Error(`No loader found for ${specifier}.`);

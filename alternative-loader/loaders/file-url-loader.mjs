@@ -1,5 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { readFileSync } from "node:fs";
+import { URL } from "node:url";
 
 const Prefix = "file://";
 const FileNotFoundCode = "ENOENT";
@@ -7,7 +8,7 @@ const FileNotFoundCode = "ENOENT";
 const Loader = ({
     name: "File URL",
     // Returns: Promise<{ statusCode, headers, body } | false>
-    async resolve(path) {
+    resolve(path) {
 
         if (!path.startsWith(Prefix)) return false;
         const resolvedPath = fileURLToPath(path);
@@ -26,6 +27,10 @@ const Loader = ({
 
             throw e;
         }
+    },
+
+    resolveRelativePath(path, parent) {
+        return new URL(path, parent).toString();
     }
 });
 

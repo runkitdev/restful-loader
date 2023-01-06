@@ -3,6 +3,7 @@ import { join } from "path";
 
 const KnownTypes = new Set(["module", "commonjs", "json", "wasm", "builtin"]);
 const RegisteredLoaders = [];
+const loaderResolvedSpecifiers = new Map();
 
 for (const file of readdirSync("./alternative-loader/loaders/")) {
     await registerLoader("./" + join("loaders", file));
@@ -54,7 +55,17 @@ function isBareSpecifier(specifier) {
     return specifier[0] && specifier[0] !== '/' && specifier[0] !== '.';
 }
 
-export async function _resolvePath(path) {
+export async function _resolvePath(path, context) {
+    if (isRelativeSpecifier(path)) {
+        const loader = loaderResolvedSpecifiers.get(context.parentURL);
+        path = await loader.resolveRelativePath(path, context.parentURL);
+
+        if (typeof path !== "string") {
+            // FIXME: Add paths to the error.
+            throw new TypeError(`${loader.name} loader returned a non-string value from \`resolveRelativePath\`.`);
+        }
+    }
+
     if (isBareSpecifier(path)) {
         for (const loader of RegisteredLoaders) {
             if (loader.resolve) {
@@ -64,6 +75,7 @@ export async function _resolvePath(path) {
                     continue;
 
                 validatePathResolveResult(result);
+                loaderResolvedSpecifiers.set(path, loader);
 
                 // Success!
                 if (statusOk(result.statusCode))
@@ -80,11 +92,6 @@ export async function _resolvePath(path) {
         }
 
         return [null, {}];
-    } else {
-        console.log("===========================");
-        console.log("Non bare specifier path: ", path);
-        console.log("===========================");
-        throw new Error("NON BARE SPECIFIER PATH NOT IMPLEMENTED YET!");
     }
 }
 
@@ -151,30 +158,37 @@ function assertNonCyclicalTypes(mimeType, convertedTypes) {
 }
 
 function normalizedLoader(exports) {
-    const { name = "Unnamed", resolve, identify, extensionMimeMap, transform, accepts } = exports;
+    // FIXME: Maybe rename `resolve` to `resolveBareSpecifier`?
+    const { name = "Unnamed", resolve, resolveRelativePath, identify, extensionMimeMap, transform, accepts } = exports;
+
+    const makeError = (ErrorType, message) => new ErrorType(`Error registering loader "${name}". ${message}`);
 
     if (identify && typeof identify !== "function") {
-        throw new TypeError("Expected `identify` field to be a function.");
+        throw makeError(TypeError, "Expected `identify` field to be a function.");
     }
 
     if (resolve && typeof resolve !== "function") {
-        throw new TypeError("Expected `resolve` field to be a function.");
+        throw makeError(TypeError, "Expected `resolve` field to be a function.");
+    }
+
+    if (resolve && typeof resolveRelativePath !== "function") {
+        throw makeError(TypeError, "A function `resolveRelativePath` must be supplied if a `resolve` is also supplied.");
     }
 
     const id = makeIdentify(identify, extensionMimeMap);
 
     if (transform && !accepts) {
-        throw new Error("If you supply a `transform` function you must also provide an `accepts` field with a list of acceptable mime-types.");
+        throw makeError(Error, "If you supply a `transform` function you must also provide an `accepts` field with a list of acceptable mime-types.");
     } else if (accepts && !transform) {
-        throw new Error("If you supply a `accepts` function you must also provide an `transform` field with a function those accepts that mime-types.");
+        throw makeError(Error, "If you supply a `accepts` function you must also provide an `transform` field with a function those accepts that mime-types.");
     }
 
     if (transform && typeof transform !== "function") {
-        throw new TypeError("Expected `transform` field to be a function.");
+        throw makeError(TypeError, "Expected `transform` field to be a function.");
     }
 
     if (accepts && typeof accepts !== "string" && !Array.isArray(accepts)) {
-        throw new TypeError("Expected `accepts` field to be a mime-type string or an array of mime-type strings.");
+        throw makeError(TypeError, "Expected `accepts` field to be a mime-type string or an array of mime-type strings.");
     }
 
     // FIXME: validate types.
@@ -182,6 +196,7 @@ function normalizedLoader(exports) {
     return {
         name: name,
         resolve: resolve,
+        resolveRelativePath: resolveRelativePath,
         transform: transform,
         accepts: accepts,
         identify: id,
@@ -255,6 +270,17 @@ function validatePathResolveResult(result) {
     // FIXME: Should this throw or just add an empty headers field?
     if (!Reflect.has(result, "headers"))
         result.headers = {};
+}
+
+// Pulled from nodejs module resolve code.
+function isRelativeSpecifier(specifier) {
+    if (specifier[0] === '.') {
+      if (specifier.length === 1 || specifier[1] === '/') return true;
+      if (specifier[1] === '.') {
+        if (specifier.length === 2 || specifier[2] === '/') return true;
+      }
+    }
+    return false;
 }
 
 // function escapeRegexpInput(str) {
