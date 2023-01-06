@@ -54,6 +54,13 @@ The `headers` field may also contain a redirect status code with a `location` he
 
 Lastly the `body` field is the contents of the file.
 
+#### `resolveRelativePath`
+`resolveRelativePath: async Function(importSpecifier: String, parentPath: String) -> String`: A function that resolves a relative path import specifier given it's parent absolute path. The parent path is the absolute path which resolved the file. In other words if `github:foo/bar/index.mjs` imports `./dep1.mjs`, it's expected that the `resolveRelativePath` returns an absolute path that the GitHub Loader's `resolve` function can use, so: `github:foo/bar/dep1.mjs`. That path will then be passed to `resolve`.
+
+> **Note**
+> If the loader implements a `resolve` function it must also implement a `resolveRelativePath` function.
+
+
 ###  `identify`
 `identify: async Function(url, body, headers) -> false | mimetypeString`: As mentioned in the `resolve` section, not all import specifiers have file extensions. For this reason, some files may have an unknown MIMEtype when they are loaded. This function may be used to identify the mimetype of the file.
 
